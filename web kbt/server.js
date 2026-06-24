@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto'); // Pengganti bcrypt (bawaan Node.js, anti-error)
+const crypto = require('crypto'); // Pengganti bcrypt bawaan Node.js (anti-error)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,15 +10,10 @@ app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Membuat direktori Volume Railway jika belum ada
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
-}
+// MENYIMPAN LANGSUNG DI ROOT DIR AGAR TIDAK DI-BLOKIR PROTOKOL KEEAMANAN CLOUD RAILWAY
+const DB_FILE = path.join(__dirname, 'db_store.json');
 
-const DB_FILE = path.join(DATA_DIR, 'db_store.json');
-
-// Inisialisasi Database Relasional
+// Inisialisasi Struktur Database Relasional SQL Simulator
 let db = {
     users: [],
     products: [],
@@ -26,24 +21,26 @@ let db = {
     activity_logs: []
 };
 
-// Membaca data lama dari Volume jika ada
+// Membaca data lama dari disk jika ada
 if (fs.existsSync(DB_FILE)) {
     try {
         db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (e) { console.error("Initialize DB Error, creating new store", e); }
 }
 
-// Fungsi Simpan ke Disk Permanen Volume Railway
+// Fungsi Simpan ke Disk Permanen
 function saveToDisk() {
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    } catch (e) { console.error("Failed writing storage state to cloud disk", e); }
 }
 
-// Helper Enkripsi Pengganti Bcrypt (Aman & Cepat)
+// Helper Enkripsi Pengganti Bcrypt (Aman & Ringan)
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-// Seed Data Awal jika database kosong
+// Seed Data Awal otomatis jika database baru masih kosong
 if (db.users.length === 0) {
     db.users.push({ id: "1", name: 'Lecture Evaluator Admin', email: 'admin@pasarkita.com', password: hashPassword('admin123'), role: 'admin' });
     db.users.push({ id: "2", name: 'John Doe', email: 'john@gmail.com', password: hashPassword('user123'), role: 'user' });
@@ -65,6 +62,10 @@ function logActivity(userName, activity) {
 }
 
 /* ================= ROUTER API SERVICE ================= */
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.post('/api/auth/register', (req, res) => {
     const { name, email, password } = req.body;
     const exists = db.users.find(u => u.email === email);
