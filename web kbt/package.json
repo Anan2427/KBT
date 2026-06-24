@@ -1,14 +1,12 @@
 {
-  "name": "pasarkita-second-soul",
-  "version": "1.0.0",
-  "description": "Pasar Kita - Custom Order Marketplace with Analytics Dashboard",
+  "name": "pasarkita-fullscreen-sql",
+  "version": "2.0.0",
+  "description": "Pasar Kita - Fullscreen SQL Cloud Dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "sqlite3": "^5.1.7",
-    "bcryptjs": "^2.4.3"
+    "express": "^4.19.2"
   }
 }
